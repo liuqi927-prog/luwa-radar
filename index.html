@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="referrer" content="no-referrer">
 <title>🦞 遛娃雷达 — 北京小众亲子地点</title>
 <style>
 :root {
@@ -268,7 +269,7 @@ function renderCard(p, idx, animate) {
   const crowdClass = (p.crowd_level||'').includes('低') ? 'tag-crowd-low' : 'tag-crowd-mid';
   const animClass = animate ? ' fade-in' : '';
   return `<div class="card${animClass}" data-idx="${idx}" data-zone="${getZone(p)}" data-cost="${costCat}" onclick="showDetail(${idx})">
-    ${p.image_url ? `<img class="card-img" src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">` : ''}
+    ${p.image_url ? `<img class="card-img" src="${p.image_url}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';var d=document.createElement('div');d.className='card-img-fallback';d.style.cssText='width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:48px;background:linear-gradient(135deg,#E8F5E9,#C8E6C9)';d.textContent='🌿';this.parentElement.insertBefore(d,this.parentElement.firstChild)">` : ''}
     <div class="card-body">
     <div class="card-header">
       <div class="card-name">${p.name}</div>
@@ -404,10 +405,10 @@ function showDetail(idx) {
     <div class="detail-row"><div class="detail-label">💡 提示</div><div class="detail-value">${p.tips}</div></div>
     ${p.description ? `<div class="detail-row"><div class="detail-label">📝 介绍</div><div class="detail-value">${p.description}</div></div>` : ''}`;
   const q = encodeURIComponent(p.name + ' 遛娃');
-  const baiduXhs = encodeURIComponent('site:xiaohongshu.com ' + p.name + ' 遛娃');
+  const xhsQ = encodeURIComponent(p.name + ' 遛娃 小红书');
   const navQ = encodeURIComponent(p.name + ' ' + p.district);
   document.getElementById('detailBtns').innerHTML = `
-    <a class="detail-btn xhs" href="https://m.baidu.com/s?word=${baiduXhs}" target="_blank">📕 看小红书实拍</a>
+    <a class="detail-btn xhs" href="https://m.baidu.com/s?word=${xhsQ}" target="_blank">📕 看小红书实拍</a>
     <a class="detail-btn douyin" href="https://www.douyin.com/search/${q}" target="_blank">🎬 看抖音视频</a>
     <a class="detail-btn nav" href="https://uri.amap.com/search?keyword=${navQ}" target="_blank">📍 导航过去（高德地图）</a>`;
   document.getElementById('overlay').classList.add('show');
