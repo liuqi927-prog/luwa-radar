@@ -92,9 +92,15 @@ body {
 .card-list { padding: 0 16px; }
 .card {
   background: var(--card-bg); border-radius: var(--radius);
-  padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
-  transition: all 0.3s; cursor: pointer;
+  padding: 0; margin-bottom: 10px; box-shadow: var(--shadow);
+  transition: all 0.3s; cursor: pointer; overflow: hidden;
 }
+.card-img {
+  width: 100%; height: 140px; object-fit: cover;
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+  display: block;
+}
+.card-body { padding: 12px 14px 14px; }
 .card:active { transform: scale(0.98); }
 .card.hidden { display: none; }
 .card.fade-in { animation: fadeIn 0.4s ease; }
@@ -262,6 +268,8 @@ function renderCard(p, idx, animate) {
   const crowdClass = (p.crowd_level||'').includes('低') ? 'tag-crowd-low' : 'tag-crowd-mid';
   const animClass = animate ? ' fade-in' : '';
   return `<div class="card${animClass}" data-idx="${idx}" data-zone="${getZone(p)}" data-cost="${costCat}" onclick="showDetail(${idx})">
+    ${p.image_url ? `<img class="card-img" src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">` : ''}
+    <div class="card-body">
     <div class="card-header">
       <div class="card-name">${p.name}</div>
       <span class="card-cost ${costClass}">${p.cost || '详询'}</span>
@@ -274,6 +282,7 @@ function renderCard(p, idx, animate) {
       <span class="tag ${crowdClass}">👥 ${p.crowd_level||'未知'}</span>
       <span class="tag">${p.best_season||'四季'}</span>
       ${p.age_range ? `<span class="tag">👶 ${p.age_range}</span>` : ''}
+    </div>
     </div>
   </div>`;
 }
@@ -395,9 +404,10 @@ function showDetail(idx) {
     <div class="detail-row"><div class="detail-label">💡 提示</div><div class="detail-value">${p.tips}</div></div>
     ${p.description ? `<div class="detail-row"><div class="detail-label">📝 介绍</div><div class="detail-value">${p.description}</div></div>` : ''}`;
   const q = encodeURIComponent(p.name + ' 遛娃');
+  const baiduXhs = encodeURIComponent('site:xiaohongshu.com ' + p.name + ' 遛娃');
   const navQ = encodeURIComponent(p.name + ' ' + p.district);
   document.getElementById('detailBtns').innerHTML = `
-    <a class="detail-btn xhs" href="https://www.xiaohongshu.com/search_result?keyword=${q}" target="_blank">📕 看小红书实拍</a>
+    <a class="detail-btn xhs" href="https://m.baidu.com/s?word=${baiduXhs}" target="_blank">📕 看小红书实拍</a>
     <a class="detail-btn douyin" href="https://www.douyin.com/search/${q}" target="_blank">🎬 看抖音视频</a>
     <a class="detail-btn nav" href="https://uri.amap.com/search?keyword=${navQ}" target="_blank">📍 导航过去（高德地图）</a>`;
   document.getElementById('overlay').classList.add('show');
