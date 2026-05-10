@@ -107,7 +107,8 @@ body {
 .cost-low { background: #EBF5FB; color: #2980B9; }
 .cost-mid { background: #FFF3ED; color: var(--primary); }
 
-.card-highlight { font-size: 13px; color: #555; margin-bottom: 8px; }
+.card-highlight { font-size: 13px; color: #555; margin-bottom: 4px; }
+.card-desc { font-size: 12px; color: #777; margin-bottom: 8px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { font-size: 11px; padding: 2px 8px; border-radius: 8px; background: var(--bg); color: var(--gray); }
 .tag-district { background: #EBF5FB; color: var(--blue); }
@@ -147,10 +148,15 @@ body {
 .detail-label { color: var(--gray); width: 80px; flex-shrink: 0; }
 .detail-value { color: var(--dark); flex: 1; }
 .detail-btn {
-  display: block; width: 100%; padding: 12px; margin-top: 16px;
+  display: block; width: 100%; padding: 12px; margin-top: 10px;
   background: var(--primary); color: white; border: none;
   border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer;
+  text-decoration: none; text-align: center;
 }
+.detail-btn.xhs { background: #FF2442; }
+.detail-btn.douyin { background: #111; }
+.detail-btn.nav { background: var(--primary); }
+.detail-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 
 .footer {
   text-align: center; padding: 20px 16px; font-size: 11px; color: #CCC;
@@ -219,7 +225,7 @@ body {
     <div class="handle"></div>
     <h2 id="detailName"></h2>
     <div id="detailBody"></div>
-    <button class="detail-btn" onclick="navigateTo()">📍 导航过去（高德地图）</button>
+    <div class="detail-btns" id="detailBtns"></div>
   </div>
 </div>
 
@@ -261,6 +267,7 @@ function renderCard(p, idx, animate) {
       <span class="card-cost ${costClass}">${p.cost || '详询'}</span>
     </div>
     <div class="card-highlight">${p.highlight}</div>
+    ${p.description ? `<div class="card-desc">${p.description}</div>` : ''}
     <div class="card-tags">
       <span class="tag tag-district">${p.district}</span>
       <span class="tag tag-category">${p.category}</span>
@@ -385,14 +392,18 @@ function showDetail(idx) {
     <div class="detail-row"><div class="detail-label">💰 费用</div><div class="detail-value">${p.cost}</div></div>
     <div class="detail-row"><div class="detail-label">👥 拥挤</div><div class="detail-value">${p.crowd_level}</div></div>
     <div class="detail-row"><div class="detail-label">🌤️ 季节</div><div class="detail-value">${p.best_season}</div></div>
-    <div class="detail-row"><div class="detail-label">💡 提示</div><div class="detail-value">${p.tips}</div></div>`;
+    <div class="detail-row"><div class="detail-label">💡 提示</div><div class="detail-value">${p.tips}</div></div>
+    ${p.description ? `<div class="detail-row"><div class="detail-label">📝 介绍</div><div class="detail-value">${p.description}</div></div>` : ''}`;
+  const q = encodeURIComponent(p.name + ' 遛娃');
+  const navQ = encodeURIComponent(p.name + ' ' + p.district);
+  document.getElementById('detailBtns').innerHTML = `
+    <a class="detail-btn xhs" href="https://www.xiaohongshu.com/search_result?keyword=${q}" target="_blank">📕 看小红书实拍</a>
+    <a class="detail-btn douyin" href="https://www.douyin.com/search/${q}" target="_blank">🎬 看抖音视频</a>
+    <a class="detail-btn nav" href="https://uri.amap.com/search?keyword=${navQ}" target="_blank">📍 导航过去（高德地图）</a>`;
   document.getElementById('overlay').classList.add('show');
 }
 function closeDetail(e) { if (e.target===document.getElementById('overlay')) document.getElementById('overlay').classList.remove('show'); }
-function navigateTo() {
-  const p = places[currentDetailIdx];
-  window.open('https://uri.amap.com/search?keyword='+encodeURIComponent(p.name+' '+p.district), '_blank');
-}
+// Navigation handled by dynamic <a> tags in detail panel
 </script>
 </body>
 </html>
