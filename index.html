@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🦞 遛娃雷达 — 北京小众亲子地点</title>
+<style>
+:root {
+  --primary: #FF6B35;
+  --primary-light: #FFF3ED;
+  --green: #2ECC71;
+  --blue: #3498DB;
+  --purple: #9B59B6;
+  --gray: #95A5A6;
+  --dark: #2C3E50;
+  --bg: #F8F9FA;
+  --card-bg: #FFFFFF;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  background: var(--bg); color: var(--dark); line-height: 1.6; padding-bottom: 100px;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), #FF8F65);
+  color: white; padding: 24px 16px 20px; text-align: center;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+}
+.header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.header .subtitle { font-size: 13px; opacity: 0.9; }
+
+.filter-bar {
+  padding: 12px 16px; overflow-x: auto; white-space: nowrap;
+  -webkit-overflow-scrolling: touch; background: white;
+  position: sticky; top: 76px; z-index: 99;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.filter-btn {
+  display: inline-block; padding: 6px 14px; margin-right: 8px;
+  border-radius: 20px; font-size: 13px; border: 1.5px solid #E0E0E0;
+  background: white; color: var(--dark); cursor: pointer; transition: all 0.2s;
+}
+.filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.filter-btn:active { transform: scale(0.95); }
+
+.stats {
+  display: flex; justify-content: space-around; padding: 16px;
+  background: white; margin: 12px 16px; border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.stat-item { text-align: center; }
+.stat-num { font-size: 24px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+/* Shuffle button */
+.shuffle-section {
+  padding: 12px 16px 4px; display: flex; align-items: center; gap: 10px;
+}
+.shuffle-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border-radius: 24px;
+  background: linear-gradient(135deg, var(--primary), #FF8F65);
+  color: white; border: none; font-size: 14px; font-weight: 600;
+  cursor: pointer; box-shadow: 0 3px 12px rgba(255,107,53,0.3);
+  transition: all 0.2s; flex-shrink: 0;
+}
+.shuffle-btn:active { transform: scale(0.95); }
+.shuffle-btn .dice { display: inline-block; transition: transform 0.5s; }
+.shuffle-btn.spinning .dice { transform: rotate(720deg); }
+.shuffle-hint { font-size: 12px; color: var(--gray); }
+
+.section-title {
+  padding: 16px 16px 8px; font-size: 16px; font-weight: 700;
+  color: var(--dark); display: flex; align-items: center; gap: 6px;
+}
+
+.scene-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; padding: 0 16px 8px;
+}
+.scene-btn {
+  background: white; border: 1.5px solid #E8E8E8; border-radius: 10px;
+  padding: 10px 6px; text-align: center; font-size: 12px;
+  cursor: pointer; transition: all 0.2s;
+}
+.scene-btn .icon { font-size: 20px; display: block; margin-bottom: 4px; }
+.scene-btn.active { border-color: var(--primary); background: var(--primary-light); }
+
+.card-list { padding: 0 16px; }
+.card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+  transition: all 0.3s; cursor: pointer;
+}
+.card:active { transform: scale(0.98); }
+.card.hidden { display: none; }
+.card.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.card-name { font-size: 15px; font-weight: 600; color: var(--dark); flex: 1; }
+.card-cost { font-size: 12px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; margin-left: 8px; }
+.cost-free { background: #E8F8F0; color: #27AE60; }
+.cost-low { background: #EBF5FB; color: #2980B9; }
+.cost-mid { background: #FFF3ED; color: var(--primary); }
+
+.card-highlight { font-size: 13px; color: #555; margin-bottom: 8px; }
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11px; padding: 2px 8px; border-radius: 8px; background: var(--bg); color: var(--gray); }
+.tag-district { background: #EBF5FB; color: var(--blue); }
+.tag-crowd-low { background: #E8F8F0; color: var(--green); }
+.tag-crowd-mid { background: #FFF9E6; color: #F39C12; }
+.tag-category { background: #F4ECF7; color: var(--purple); }
+
+.no-results { text-align: center; padding: 40px 20px; color: var(--gray); font-size: 14px; display: none; }
+.no-results.show { display: block; }
+
+/* Mode indicator */
+.mode-indicator {
+  text-align: center; padding: 8px; font-size: 12px; color: var(--gray);
+}
+.mode-indicator .mode-tag {
+  display: inline-block; padding: 3px 10px; border-radius: 10px;
+  background: var(--primary-light); color: var(--primary); font-weight: 500;
+}
+
+/* Detail overlay */
+.overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); z-index: 200; display: none;
+  align-items: flex-end; justify-content: center;
+}
+.overlay.show { display: flex; }
+.detail-panel {
+  background: white; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 500px; max-height: 80vh;
+  overflow-y: auto; padding: 24px 20px 40px;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.detail-panel .handle { width: 36px; height: 4px; background: #DDD; border-radius: 2px; margin: 0 auto 16px; }
+.detail-panel h2 { font-size: 18px; margin-bottom: 12px; }
+.detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid #F0F0F0; font-size: 14px; }
+.detail-label { color: var(--gray); width: 80px; flex-shrink: 0; }
+.detail-value { color: var(--dark); flex: 1; }
+.detail-btn {
+  display: block; width: 100%; padding: 12px; margin-top: 16px;
+  background: var(--primary); color: white; border: none;
+  border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer;
+}
+
+.footer {
+  text-align: center; padding: 20px 16px; font-size: 11px; color: #CCC;
+}
+.footer a { color: var(--primary); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🦞 遛娃雷达</h1>
+  <div class="subtitle">北京 · 小众亲子地点 · 专为昌平家庭定制</div>
+</div>
+
+<div class="filter-bar" id="distanceFilter">
+  <span class="filter-btn active" data-filter="all">全部</span>
+  <span class="filter-btn" data-filter="昌平">📍 昌平</span>
+  <span class="filter-btn" data-filter="近距离">🚗 30-45min</span>
+  <span class="filter-btn" data-filter="远距离">🏔️ 45min+</span>
+  <span class="filter-btn" data-filter="免费">💰 免费</span>
+</div>
+
+<div class="stats" id="statsBar">
+  <div class="stat-item"><div class="stat-num" id="statTotal">39</div><div class="stat-label">个地点</div></div>
+  <div class="stat-item"><div class="stat-num" id="statFree">14</div><div class="stat-label">个免费</div></div>
+  <div class="stat-item"><div class="stat-num" id="statShowing">39</div><div class="stat-label">正在显示</div></div>
+</div>
+
+<!-- Shuffle -->
+<div class="shuffle-section">
+  <button class="shuffle-btn" id="shuffleBtn" onclick="shuffleRecommend()">
+    <span class="dice">🎲</span> 今天去哪儿
+  </button>
+  <span class="shuffle-hint">随机推荐6个宝藏地点</span>
+</div>
+
+<div class="mode-indicator" id="modeIndicator" style="display:none">
+  <span class="mode-tag" id="modeTag"></span>
+  <span style="margin-left:6px; cursor:pointer" onclick="resetAll()">✕ 显示全部</span>
+</div>
+
+<!-- Scene -->
+<div class="section-title">🎯 场景速查</div>
+<div class="scene-grid" id="sceneGrid">
+  <div class="scene-btn" data-scene="户外"><span class="icon">☀️</span>户外徒步</div>
+  <div class="scene-btn" data-scene="室内"><span class="icon">🌧️</span>室内去处</div>
+  <div class="scene-btn" data-scene="免费"><span class="icon">💰</span>免费</div>
+  <div class="scene-btn" data-scene="动物"><span class="icon">🐄</span>亲近动物</div>
+  <div class="scene-btn" data-scene="采摘"><span class="icon">🍓</span>采摘农场</div>
+  <div class="scene-btn" data-scene="露营"><span class="icon">🏕️</span>露营野餐</div>
+</div>
+
+<div class="section-title" id="listTitle">📋 全部地点</div>
+<div class="card-list" id="cardList"></div>
+<div class="no-results" id="noResults">没有匹配的地点 🤷</div>
+
+<div class="footer">
+  🦞 遛娃雷达 v1.0 · 数据更新于 2026-05-10<br>
+  共收录 <strong>39</strong> 个北京小众亲子地点<br>
+  <span style="font-size:10px; color:#DDD">Built with ❤️ by 虾参</span>
+</div>
+
+<!-- Detail overlay -->
+<div class="overlay" id="overlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel">
+    <div class="handle"></div>
+    <h2 id="detailName"></h2>
+    <div id="detailBody"></div>
+    <button class="detail-btn" onclick="navigateTo()">📍 导航过去（高德地图）</button>
+  </div>
+</div>
+
+<script>
+const places = [{"name": "大岭沟猕猴桃谷", "district": "昌平区", "category": "公园/徒步", "age_range": "3-12岁", "distance_from_changping": "昌平本地，约30分钟车程", "highlight": "\"云端步道\"美誉，全程平缓老人小孩都能走", "source": "https://m.bj.bendibao.com/tour/227367_2.html", "crowd_level": "低", "cost": "免费", "best_season": "春秋", "tips": "建议穿防滑鞋，带足饮用水"}, {"name": "崔村西峪橡树谷", "district": "昌平区", "category": "公园/徒步", "age_range": "3-12岁", "distance_from_changping": "昌平本地，约20分钟车程", "highlight": "漫山桃花海+百年原始橡林，免费开放", "source": "https://hk.trip.com/moments/poi-cuicun-xiyu-oak-valley-145087103/", "crowd_level": "低", "cost": "免费", "best_season": "春季赏花/秋季红叶", "tips": "春天桃花、秋天红叶+柿子，四季皆宜但春秋最佳"}, {"name": "燕子湖乐园", "district": "昌平区", "category": "公园/乐园", "age_range": "3-10岁", "distance_from_changping": "昌平本地，约15分钟车程", "highlight": "户外拓展+自助烧烤，亲子互动丰富", "source": "https://huodong.com/venue?district=昌平区", "crowd_level": "低", "cost": "约100-200元/家庭", "best_season": "春夏秋", "tips": "有东南门和东门两个入口，建议提前确认开放时间"}, {"name": "十三陵林下旅游文化园", "district": "昌平区", "category": "公园", "age_range": "2-12岁", "distance_from_changping": "昌平本地，十三陵镇", "highlight": "天然氧吧+数十项儿童娱乐项目，毗邻十三陵水库", "source": "http://bj.bendibao.com/tour/2024716/363434_6.shtm", "crowd_level": "低", "cost": "约50-80元", "best_season": "夏季最佳（林荫避暑）", "tips": "园内有枫树林、银杏林等，秋天也很美"}, {"name": "小汤山现代农业科技示范园", "district": "昌平区", "category": "农场/科普", "age_range": "3-12岁", "distance_from_changping": "昌平本地，小汤山镇", "highlight": "北京唯一农业4A景区，科技+教育+采摘一体", "source": "https://hk.trip.com/moments/detail/beijing-1-144256134/", "crowd_level": "低", "cost": "约60-100元", "best_season": "四季（温室大棚全年开放）", "tips": "春天有500米海棠大道，非常出片"}, {"name": "百梓汇·营地·亲子乐园", "district": "昌平区", "category": "露营", "age_range": "3-12岁", "distance_from_changping": "昌平马池口镇，约20分钟", "highlight": "京郊首家综合露营地，11万平方米，20多顶帐篷", "source": "https://whlyj.beijing.gov.cn/zwgk/xwzx/gzdt/202407/t20240711_3743731.html", "crowd_level": "中", "cost": "约200-400元/家庭", "best_season": "春夏秋", "tips": "五大游玩模块，建议提前预约周末场"}, {"name": "蟒山国家森林公园", "district": "昌平区", "category": "公园/登山", "age_range": "5-12岁", "distance_from_changping": "昌平本地，约15分钟", "highlight": "1299级台阶，近市区的登山好去处", "source": "https://www.zhihu.com/question/535698613", "crowd_level": "中", "cost": "约30元", "best_season": "春秋", "tips": "纯爬山锻炼，5岁娃可能需要大人辅助"}, {"name": "大杨山国家森林公园", "district": "昌平区", "category": "公园/徒步", "age_range": "4-12岁", "distance_from_changping": "昌平本地，约40分钟", "highlight": "木栈道环线+溪流风车，京郊清新徒步", "source": "http://bj.bendibao.com/tour/2026325/381549.shtm", "crowd_level": "低", "cost": "约20-30元", "best_season": "春夏秋", "tips": "昌平5条小众徒步线路之一，人少景美"}, {"name": "昌平艺麓园", "district": "昌平区", "category": "公园/园林", "age_range": "3-12岁", "distance_from_changping": "昌平南口镇，约25分钟", "highlight": "传统皇家四合院风格，亭台楼阁小桥流水", "source": "https://you.ctrip.com/travels/beijing1/t6985-p3-m3-c1-g29", "crowd_level": "低", "cost": "约40-60元", "best_season": "四季", "tips": "适合拍照打卡，感受北方园林建筑之美"}, {"name": "奥肯尼克农场", "district": "昌平区", "category": "农场", "age_range": "2-10岁", "distance_from_changping": "小汤山大柳树环岛东5公里", "highlight": "户外活动+烧烤体验，性价比高", "source": "https://www.zhihu.com/question/535698613", "crowd_level": "低", "cost": "约100-200元/家庭", "best_season": "春夏秋", "tips": "适合家庭聚会，建议自带食材烧烤"}, {"name": "昌平香味葡萄园", "district": "昌平区", "category": "农场/采摘", "age_range": "3-12岁", "distance_from_changping": "马池口镇，约15分钟", "highlight": "83亩葡萄园，多品种采摘体验", "source": "https://www.qianggen.net/special/2013cmcz/", "crowd_level": "低", "cost": "约50-80元/人（含采摘）", "best_season": "夏末秋初（8-10月）", "tips": "葡萄成熟季去最好，可现摘现吃"}, {"name": "一起·生态农场", "district": "昌平区", "category": "农场", "age_range": "2-8岁", "distance_from_changping": "小汤山，约15分钟", "highlight": "可以去鸡窝捡鸡蛋，真实农场体验", "source": "https://www.zhihu.com/question/535698613", "crowd_level": "低", "cost": "约80-150元/家庭", "best_season": "春夏秋", "tips": "面积大口碑好，适合低龄宝宝亲近动物"}, {"name": "兴奥草莓专业合作社", "district": "昌平区", "category": "农场/采摘", "age_range": "2-12岁", "distance_from_changping": "昌平本地", "highlight": "世界草莓大会举办地，国家级合作社品质", "source": "https://www.qianggen.net/special/2013cmcz/", "crowd_level": "中", "cost": "约60-100元/人", "best_season": "冬春（12-5月）", "tips": "还有食用菌、南果等独家品类可体验"}, {"name": "金六环自然博物奇妙馆", "district": "昌平区", "category": "博物馆", "age_range": "3-12岁", "distance_from_changping": "南邵镇，昌平本地", "highlight": "沉浸式自然科普，免费免预约", "source": "http://bj.bendibao.com/tour/2025722/374636.shtm", "crowd_level": "低", "cost": "免费", "best_season": "四季（室内）", "tips": "地铁昌平线沙河站换乘公交可达"}, {"name": "中国农机院北京农机试验站", "district": "昌平区", "category": "农场/科普", "age_range": "3-10岁", "distance_from_changping": "昌平本地", "highlight": "了解农业知识+亲近奶牛，田园乐趣", "source": "https://you.ctrip.com/travels/beijing1/t6985-p3-m3-c1-g29", "crowd_level": "低", "cost": "约50-80元", "best_season": "春夏秋", "tips": "可与宽Camp营地串联一日游"}, {"name": "居庸关长城", "district": "昌平区", "category": "长城/历史", "age_range": "5-12岁", "distance_from_changping": "昌平本地，S216公路", "highlight": "\"居庸叠翠\"闻名，比八达岭人少的拍照圣地", "source": "https://my.trip.com/moments/detail/beijing-1-144059819", "crowd_level": "中", "cost": "约40元", "best_season": "春秋", "tips": "春天花海列车经过非常出片，适合亲子摄影"}, {"name": "念坛公园", "district": "大兴区", "category": "公园", "age_range": "2-10岁", "distance_from_changping": "约45分钟车程", "highlight": "大片无动力设施，沙坑+亲水区，自由探索乐园", "source": "https://www.visitbeijing.com.cn/article/4OHgsFzUBWs", "crowd_level": "低", "cost": "免费", "best_season": "春夏秋", "tips": "地铁4号线大兴线可达，适合低龄宝宝"}, {"name": "南海子公园（麋鹿苑）", "district": "大兴区", "category": "公园/动物", "age_range": "2-12岁", "distance_from_changping": "约50分钟车程", "highlight": "京城\"小奈良\"，北京最大湿地公园，偶遇麋鹿群", "source": "https://www.visitbeijing.com.cn/article/4OHgsFzUBWs", "crowd_level": "低", "cost": "免费", "best_season": "四季", "tips": "公交913/453直达南1门，带望远镜看麋鹿更佳"}, {"name": "温榆河公园", "district": "朝阳区", "category": "公园", "age_range": "2-10岁", "distance_from_changping": "约30分钟车程", "highlight": "市内沙滩+森林小火车穿梭万亩绿林，偶遇松鼠", "source": "http://bj.bendibao.com/tour/2025722/374636.shtm", "crowd_level": "中", "cost": "免费", "best_season": "春夏秋", "tips": "沙滩区建议带换洗衣服和玩沙工具"}, {"name": "美克洞学馆", "district": "朝阳区", "category": "博物馆/艺术", "age_range": "3-12岁", "distance_from_changping": "约40分钟车程", "highlight": "奇幻建筑空间，艺术与童趣融合", "source": "https://www.visitbeijing.com.cn/article/4OHgsFzUBWs", "crowd_level": "低", "cost": "免费", "best_season": "四季（室内）", "tips": "地铁6号线东大桥A口或2号线朝阳门A口，步行可达"}, {"name": "中国电影博物馆", "district": "朝阳区", "category": "博物馆", "age_range": "4-12岁", "distance_from_changping": "约40分钟车程", "highlight": "环形巨幕+配音体验室，躺着看《大闹天宫》", "source": "https://my.trip.com/moments/detail/beijing-1-128244222", "crowd_level": "低", "cost": "免费", "best_season": "四季（室内）", "tips": "\"老电影配音室\"体验超赞，建议预留2-3小时"}, {"name": "中国奥运博物馆", "district": "朝阳区", "category": "博物馆", "age_range": "4-12岁", "distance_from_changping": "约35分钟车程", "highlight": "奥运知识互动体验，免费免预约", "source": "http://bj.bendibao.com/tour/2025722/374636.shtm", "crowd_level": "低", "cost": "免费", "best_season": "四季（室内）", "tips": "地铁8号线奥体中心站B2口，开放时间9:00-17:00"}, {"name": "老牛儿童探索馆", "district": "朝阳区", "category": "博物馆/探索", "age_range": "2-7岁", "distance_from_changping": "约35分钟车程", "highlight": "寓教于乐，让孩子在玩中学，专为儿童设计", "source": "https://www.visitbeijing.com.cn/article/4OHgsFzUBWs", "crowd_level": "中", "cost": "约100-200元", "best_season": "四季（室内）", "tips": "面积不算超大但内容精，适合低龄宝宝"}, {"name": "中国蜜蜂博物馆", "district": "海淀区", "category": "博物馆", "age_range": "3-12岁", "distance_from_changping": "约30分钟车程", "highlight": "国家植物园内，了解养蜂史+科普", "source": "https://www.visitbeijing.com.cn/article/4OHgsFzUBWs", "crowd_level": "低", "cost": "植物园门票约10元", "best_season": "春夏（花开时节蜜蜂活跃）", "tips": "在国家植物园内，可与植物园游览串联"}, {"name": "百望山森林公园", "district": "海淀区", "category": "公园/登山", "age_range": "4-12岁", "distance_from_changping": "约25分钟车程", "highlight": "太行前哨第一峰，有儿童栈道和独木桥", "source": "https://www.visitbeijing.com.cn/article/4OelLhWOorY", "crowd_level": "中", "cost": "约6元（含年票17景点100元/年）", "best_season": "秋季（红叶）", "tips": "可与颐和园串联一日游，市属公园年票覆盖"}, {"name": "首钢园·一高炉SoReal科幻乐园", "district": "石景山区", "category": "博物馆/科幻", "age_range": "5-12岁", "distance_from_changping": "约45分钟车程", "highlight": "工业遗址变身科幻乐园，钢铁巨兽视觉震撼", "source": "https://my.trip.com/moments/detail/beijing-1-139834948", "crowd_level": "中", "cost": "约100-200元", "best_season": "四季", "tips": "周二至周五13:30-19:00，周末时间更长，周一闭馆"}, {"name": "史家胡同博物馆", "district": "东城区", "category": "博物馆", "age_range": "4-12岁", "distance_from_changping": "约40分钟车程", "highlight": "老北京风情宝藏，拉洋片、抖空竹等传统游戏", "source": "https://www.visitbeijing.com.cn/article/4OHgsFzUBWs", "crowd_level": "低", "cost": "免费", "best_season": "四季（室内）", "tips": "藏在胡同深处，可顺路逛胡同感受老北京"}, {"name": "路县故城遗址博物馆", "district": "通州区", "category": "博物馆", "age_range": "5-12岁", "distance_from_changping": "约50分钟车程", "highlight": "馆园一体，副中心特色场馆+遗址公园", "source": "https://m.bj.bendibao.com/tour/178400.html", "crowd_level": "低", "cost": "免费", "best_season": "四季", "tips": "2025年新开，设施新，人流少"}, {"name": "中国园林博物馆", "district": "丰台区", "category": "博物馆/园林", "age_range": "3-12岁", "distance_from_changping": "约45分钟车程", "highlight": "室内外展园+锦鲤池+科教活动，园林沉浸体验", "source": "https://www.visitbeijing.com.cn/article/4OHgsFzUBWs", "crowd_level": "低", "cost": "免费", "best_season": "春夏（室外花开）", "tips": "一层科普空间常有可参与的科教活动，关注公众号预约"}, {"name": "玉渡山", "district": "延庆区", "category": "公园/溯溪", "age_range": "4-12岁", "distance_from_changping": "约1小时车程", "highlight": "\"京郊小瑞士\"，森林小溪溯溪玩水超爽", "source": "http://bj.bendibao.com/tour/2026325/381549.shtm", "crowd_level": "低", "cost": "60元/人，1.2米以下免费", "best_season": "夏季（玩水最佳）", "tips": "导航\"玉渡山1号停车场\"，停车场旁有森林小溪"}, {"name": "金海湖北山步道", "district": "平谷区", "category": "公园/徒步", "age_range": "4-12岁", "distance_from_changping": "约1小时车程", "highlight": "无人管理免费景点，京郊最美湖光山色", "source": "https://www.visitbeijing.com.cn/article/47Qocd3m6pL", "crowd_level": "低", "cost": "免费", "best_season": "春夏秋", "tips": "金海湖还有水上项目，可安排一天两玩"}, {"name": "雁栖湖", "district": "怀柔区", "category": "湖泊/水上", "age_range": "3-12岁", "distance_from_changping": "约50分钟车程", "highlight": "湖光山色+游船+周边农家乐", "source": "https://baby.sina.cn/wemedia/2017-09-28/detail-ifymmiwm0350388.d.html", "crowd_level": "中", "cost": "约50-100元", "best_season": "春夏秋", "tips": "APEC会址附近景色一流，周末建议早出发"}, {"name": "鹞子峪城堡徒步", "district": "怀柔区", "category": "公园/徒步", "age_range": "4-12岁", "distance_from_changping": "约1小时车程", "highlight": "桃花长城轻徒步，7km亲子友好路线", "source": "https://hk.trip.com/moments/theme/poi-badaling-ancient-great-wall-10548122", "crowd_level": "低", "cost": "免费", "best_season": "春季（桃花季）", "tips": "春天桃花+长城的组合绝美，建议4月前往"}, {"name": "牛口峪湿地公园", "district": "房山区", "category": "公园", "age_range": "2-12岁", "distance_from_changping": "约1小时车程", "highlight": "小众静谧湿地，水边可露营野餐，偶遇小野鸭", "source": "http://bj.bendibao.com/tour/2026325/381549.shtm", "crowd_level": "低", "cost": "免费", "best_season": "春夏秋", "tips": "可带野餐垫和望远镜观鸟"}, {"name": "水峪村", "district": "房山区", "category": "古村", "age_range": "3-12岁", "distance_from_changping": "约1小时车程", "highlight": "600年古村落，石板路+古宅探秘", "source": "https://gs.ctrip.com/html5/you/sight/beijing1/107782.html", "crowd_level": "低", "cost": "免费", "best_season": "春秋", "tips": "非常安静的小村子，适合带娃慢逛体验乡村生活"}, {"name": "琉璃星谷", "district": "门头沟区", "category": "乐园", "age_range": "3-10岁", "distance_from_changping": "约1小时车程", "highlight": "雪圈滑道+冰车+喂鸽子，冬季亲子乐园", "source": "http://bj.bendibao.com/tour/2026325/381549.shtm", "crowd_level": "中", "cost": "约100-200元", "best_season": "冬季", "tips": "冬季限定项目，可串联一尺花园+谷山村一日游"}, {"name": "坡峰岭", "district": "房山区", "category": "公园/红叶", "age_range": "4-12岁", "distance_from_changping": "约1小时车程", "highlight": "秋日红叶天花板，漫山黄栌+亲子徒步", "source": "https://tw.trip.com/moments/theme/poi-cloud-stone-house-30288796-attraction-993137/", "crowd_level": "中", "cost": "约50元", "best_season": "秋季（10月中下旬）", "tips": "红叶季人会多些，建议非周末或早起前往"}, {"name": "中国妇女儿童博物馆", "district": "东城区", "category": "博物馆", "age_range": "3-12岁", "distance_from_changping": "约40分钟车程", "highlight": "专为妇女儿童打造，互动展览丰富", "source": "http://bj.bendibao.com/tour/2025722/374636.shtm", "crowd_level": "低", "cost": "免费", "best_season": "四季（室内）", "tips": "适合雨天或极端天气的备选室内方案"}, {"name": "古北水镇", "district": "密云区", "category": "古镇", "age_range": "3-12岁", "distance_from_changping": "约1.5小时车程", "highlight": "长城脚下的北方水镇，夜景绝美", "source": "https://my.trip.com/moments/detail/beijing-1-144019436", "crowd_level": "中", "cost": "140元/人", "best_season": "四季（冬季有温泉）", "tips": "建议住一晚看夜景，冬季可泡温泉"}];
+
+const sceneMap = {
+  '户外': ['公园','徒步','乐园','森林','山','步道','溪','湖'],
+  '室内': ['博物馆','科普','手工','探索馆','乐园','科幻','影','艺术'],
+  '免费': [],
+  '动物': ['农场','动物','麋鹿','蜜蜂','鸡蛋','奶牛','鸭'],
+  '采摘': ['采摘','农场','葡萄','草莓','农业','农机'],
+  '露营': ['露营','营地','野餐','湿地','烧烤']
+};
+
+function getZone(p) {
+  if (p.district === '昌平区') return '昌平';
+  const d = (p.distance_from_changping || '').toLowerCase();
+  if (d.includes('45') || d.includes('1小时') || d.includes('1.5') || d.includes('远') || d.includes('60')) return '远距离';
+  return '近距离';
+}
+
+function getCostCat(p) {
+  const c = p.cost || '';
+  if (c.includes('免费')) return 'free';
+  const nums = c.match(/\d+/g);
+  if (nums && parseInt(nums[0]) <= 50) return 'low';
+  return 'mid';
+}
+
+function renderCard(p, idx, animate) {
+  const costCat = getCostCat(p);
+  const costClass = costCat === 'free' ? 'cost-free' : costCat === 'low' ? 'cost-low' : 'cost-mid';
+  const crowdClass = (p.crowd_level||'').includes('低') ? 'tag-crowd-low' : 'tag-crowd-mid';
+  const animClass = animate ? ' fade-in' : '';
+  return `<div class="card${animClass}" data-idx="${idx}" data-zone="${getZone(p)}" data-cost="${costCat}" onclick="showDetail(${idx})">
+    <div class="card-header">
+      <div class="card-name">${p.name}</div>
+      <span class="card-cost ${costClass}">${p.cost || '详询'}</span>
+    </div>
+    <div class="card-highlight">${p.highlight}</div>
+    <div class="card-tags">
+      <span class="tag tag-district">${p.district}</span>
+      <span class="tag tag-category">${p.category}</span>
+      <span class="tag ${crowdClass}">👥 ${p.crowd_level||'未知'}</span>
+      <span class="tag">${p.best_season||'四季'}</span>
+      ${p.age_range ? `<span class="tag">👶 ${p.age_range}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+const cardList = document.getElementById('cardList');
+let currentFilter = 'all', currentScene = null, shuffleMode = false;
+
+function renderAll(animate) {
+  cardList.innerHTML = places.map((p,i) => renderCard(p,i,animate)).join('');
+  applyFilters();
+}
+
+function applyFilters() {
+  if (shuffleMode) return;
+  const cards = cardList.querySelectorAll('.card');
+  let visible = 0;
+  cards.forEach(card => {
+    const idx = parseInt(card.dataset.idx);
+    const p = places[idx];
+    const zone = card.dataset.zone;
+    const costCat = card.dataset.cost;
+    let show = true;
+    if (currentFilter === '免费') show = costCat === 'free';
+    else if (currentFilter !== 'all') show = zone === currentFilter;
+    if (show && currentScene) {
+      if (currentScene === '免费') { show = costCat === 'free'; }
+      else {
+        const kws = sceneMap[currentScene] || [];
+        const text = (p.category+' '+p.highlight+' '+p.name).toLowerCase();
+        show = kws.some(k => text.includes(k));
+      }
+    }
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  document.getElementById('noResults').classList.toggle('show', visible===0);
+  document.getElementById('listTitle').textContent = `📋 ${visible} 个地点`;
+  document.getElementById('statShowing').textContent = visible;
+}
+
+// Shuffle recommend
+function shuffleRecommend() {
+  shuffleMode = true;
+  const btn = document.getElementById('shuffleBtn');
+  btn.classList.add('spinning');
+  setTimeout(() => btn.classList.remove('spinning'), 500);
+  
+  // Reset filters
+  currentFilter = 'all'; currentScene = null;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-filter="all"]').classList.add('active');
+  document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+  
+  // Pick 6 random
+  const indices = Array.from({length: places.length}, (_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const picked = indices.slice(0, 6);
+  
+  cardList.innerHTML = picked.map(i => renderCard(places[i], i, true)).join('');
+  
+  document.getElementById('noResults').classList.remove('show');
+  document.getElementById('listTitle').textContent = '🎲 随机推荐 6 个';
+  document.getElementById('statShowing').textContent = '6';
+  document.getElementById('modeIndicator').style.display = 'block';
+  document.getElementById('modeTag').textContent = '🎲 随机推荐模式';
+}
+
+function resetAll() {
+  shuffleMode = false;
+  document.getElementById('modeIndicator').style.display = 'none';
+  renderAll(true);
+}
+
+// Init
+renderAll(false);
+document.getElementById('statFree').textContent = places.filter(p => getCostCat(p)==='free').length;
+
+// Filters
+document.querySelectorAll('#distanceFilter .filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    shuffleMode = false;
+    document.getElementById('modeIndicator').style.display = 'none';
+    document.querySelectorAll('#distanceFilter .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderAll(false); applyFilters();
+  });
+});
+
+document.querySelectorAll('#sceneGrid .scene-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    shuffleMode = false;
+    document.getElementById('modeIndicator').style.display = 'none';
+    const wasActive = btn.classList.contains('active');
+    document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+    if (!wasActive) { btn.classList.add('active'); currentScene = btn.dataset.scene; }
+    else { currentScene = null; }
+    renderAll(false); applyFilters();
+  });
+});
+
+// Detail
+let currentDetailIdx = -1;
+function showDetail(idx) {
+  currentDetailIdx = idx;
+  const p = places[idx];
+  document.getElementById('detailName').textContent = p.name;
+  document.getElementById('detailBody').innerHTML = `
+    <div class="detail-row"><div class="detail-label">📍 位置</div><div class="detail-value">${p.district} · ${p.distance_from_changping}</div></div>
+    <div class="detail-row"><div class="detail-label">⭐ 亮点</div><div class="detail-value">${p.highlight}</div></div>
+    <div class="detail-row"><div class="detail-label">🏷️ 类型</div><div class="detail-value">${p.category}</div></div>
+    <div class="detail-row"><div class="detail-label">👶 适合</div><div class="detail-value">${p.age_range}</div></div>
+    <div class="detail-row"><div class="detail-label">💰 费用</div><div class="detail-value">${p.cost}</div></div>
+    <div class="detail-row"><div class="detail-label">👥 拥挤</div><div class="detail-value">${p.crowd_level}</div></div>
+    <div class="detail-row"><div class="detail-label">🌤️ 季节</div><div class="detail-value">${p.best_season}</div></div>
+    <div class="detail-row"><div class="detail-label">💡 提示</div><div class="detail-value">${p.tips}</div></div>`;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeDetail(e) { if (e.target===document.getElementById('overlay')) document.getElementById('overlay').classList.remove('show'); }
+function navigateTo() {
+  const p = places[currentDetailIdx];
+  window.open('https://uri.amap.com/search?keyword='+encodeURIComponent(p.name+' '+p.district), '_blank');
+}
+</script>
+</body>
+</html>
